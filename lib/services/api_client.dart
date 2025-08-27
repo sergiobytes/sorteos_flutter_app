@@ -4,6 +4,12 @@ import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 import 'package:sorteos_app/config/constants/environment.dart';
 
+class PurgeResult {
+  final int deletedParticipants;
+  final int deletedPhotos;
+  PurgeResult({required this.deletedParticipants, required this.deletedPhotos});
+}
+
 class ApiClient {
   static String apiBase = Environment.apiUrl;
   final http.Client _http = http.Client();
@@ -109,5 +115,34 @@ class ApiClient {
     await sink.close();
 
     return file;
+  }
+
+  Future<PurgeResult> purgeAll({
+    required String idToken,
+    bool deletePhotos = true, // cámbialo si no quieres borrar fotos
+  }) async {
+    print(idToken);
+
+    final url = '$apiBase/admin/purge';
+
+    final resp = await _dio.post(
+      url,
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $idToken',
+          'X-Confirm-Purge': 'yes', // confirmación obligatoria del backend
+        },
+      ),
+    );
+
+    if (resp.statusCode != 200) {
+      throw Exception('Error purgando base de datos (${resp.statusCode})');
+    }
+
+    final data = resp.data as Map<String, dynamic>;
+    return PurgeResult(
+      deletedParticipants: (data['deletedParticipants'] ?? 0) as int,
+      deletedPhotos: (data['deletedPhotos'] ?? 0) as int,
+    );
   }
 }

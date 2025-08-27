@@ -20,7 +20,9 @@ class _AdminPageState extends State<AdminPage> {
   final _auth = AuthService();
   final _api = ApiClient();
 
-  bool _loading = false;
+  bool _loadingLogin = false;
+  bool _loadingZip = false;
+  bool _loadingPurge = false;
   String? _zipPath;
 
   @override
@@ -32,7 +34,7 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _login() async {
     if (!_form.currentState!.validate()) return;
-    setState(() => _loading = true);
+  setState(() => _loadingLogin = true);
     try {
       await _auth.signIn(_emailCtrl.text.trim(), _passCtrl.text);
       if (!mounted) return;
@@ -45,7 +47,7 @@ class _AdminPageState extends State<AdminPage> {
         context,
       ).showSnackBar(SnackBar(content: Text('Auth error: ${e.code}')));
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _loadingLogin = false);
     }
   }
 
@@ -60,7 +62,7 @@ class _AdminPageState extends State<AdminPage> {
       return;
     }
 
-    setState(() => _loading = true);
+  setState(() => _loadingZip = true);
     try {
       final tmpDir = await getTemporaryDirectory();
       final fileName =
@@ -89,7 +91,72 @@ class _AdminPageState extends State<AdminPage> {
         context,
       ).showSnackBar(SnackBar(content: Text('Error descargando: $e')));
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _loadingZip = false);
+    }
+  }
+
+  Future<void> _purgeAll() async {
+    final token = await _auth.currentIdToken();
+    if (token == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Inicia sesión como admin')));
+      return;
+    }
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Confirmar purga'),
+            content: const Text(
+              'Se eliminarán TODOS los registros.\n'
+              'Sugerencia: exporta el ZIP antes.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Borrar todo'),
+              ),
+            ],
+          ),
+    );
+    if (ok != true) return;
+
+  if (_loadingZip || _loadingPurge) return;
+  setState(() => _loadingPurge = true);
+
+    try {
+      // llama al ApiClient como a downloadZip
+      final res = await _api.purgeAll(
+        idToken: token,
+        deletePhotos: true, // pon false si no quieres borrar fotos
+      );
+
+      if (!mounted) return;
+      setState(() => _zipPath = null);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Purga completada. Registros: ${res.deletedParticipants}, '
+            'Fotos: ${res.deletedPhotos}',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error purgando: $e')));
+    } finally {
+      if (mounted) setState(() => _loadingPurge = false);
     }
   }
 
@@ -111,84 +178,146 @@ class _AdminPageState extends State<AdminPage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Admin')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (!logged) ...[
-            Form(
-              key: _form,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Iniciar sesión',
-                    style: Theme.of(context).textTheme.titleLarge,
+      body: Center(
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          shrinkWrap: true,
+          children: [
+            if (!logged) ...[
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Form(
+                    key: _form,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Iniciar sesión',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _emailCtrl,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: _dec('Email'),
+                          validator:
+                              (v) =>
+                                  (v == null || v.trim().isEmpty)
+                                      ? 'Requerido'
+                                      : null,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _passCtrl,
+                          decoration: _dec('Contraseña'),
+                          obscureText: true,
+                          validator:
+                              (v) =>
+                                  (v == null || v.isEmpty) ? 'Requerido' : null,
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: (_loadingLogin || _loadingZip || _loadingPurge) ? null : _login,
+                            child: _loadingLogin
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text('Entrar'),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _emailCtrl,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: _dec('Email'),
-                    validator:
-                        (v) =>
-                            (v == null || v.trim().isEmpty)
-                                ? 'Requerido'
-                                : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _passCtrl,
-                    decoration: _dec('Contraseña'),
-                    obscureText: true,
-                    validator:
-                        (v) => (v == null || v.isEmpty) ? 'Requerido' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    onPressed: _loading ? null : _login,
-                    child:
-                        _loading
-                            ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                            : const Text('Entrar'),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ] else ...[
-            Row(
-              children: [
-                FilledButton.icon(
-                  onPressed: _loading ? null : _downloadZip,
-                  icon:
-                      _loading
-                          ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                          : const Icon(Icons.download),
-                  label: const Text('Descargar ZIP'),
+            ] else ...[
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: _loading ? null : _logout,
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Salir'),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 32,
+                    horizontal: 24,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 260,
+                        child: FilledButton.icon(
+                          onPressed: (_loadingZip || _loadingPurge) ? null : _downloadZip,
+                          icon: _loadingZip
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.download),
+                          label: const Text('Descargar ZIP'),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: 260,
+                        child: FilledButton.icon(
+                          onPressed: (_loadingZip || _loadingPurge) ? null : _purgeAll,
+                          icon: _loadingPurge
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.delete),
+                          label: const Text('Borrar base de datos'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.red.shade400,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: 260,
+                        child: OutlinedButton.icon(
+                          onPressed: (_loadingZip || _loadingPurge) ? null : _logout,
+                          icon: const Icon(Icons.logout),
+                          label: const Text('Salir'),
+                        ),
+                      ),
+                      if (_zipPath != null) ...[
+                        const SizedBox(height: 24),
+                        SelectableText('Archivo: $_zipPath'),
+                      ],
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Nota: el ZIP incluye un Excel con datos y las fotos autenticadas.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.black54),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (_zipPath != null) SelectableText('Archivo: $_zipPath'),
-            const SizedBox(height: 24),
-            const Text(
-              'Nota: el ZIP incluye un Excel con datos enmascarados y las fotos autenticadas.',
-            ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
