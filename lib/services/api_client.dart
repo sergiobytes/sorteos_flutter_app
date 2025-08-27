@@ -121,8 +121,6 @@ class ApiClient {
     required String idToken,
     bool deletePhotos = true, // cámbialo si no quieres borrar fotos
   }) async {
-    print(idToken);
-
     final url = '$apiBase/admin/purge';
 
     final resp = await _dio.post(
