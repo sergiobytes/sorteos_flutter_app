@@ -1,0 +1,30 @@
+name: sorteos_app
+description: "A new Flutter project."
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  image_picker: ^1.2.0
+  http: ^1.5.0
+  dio: ^5.9.0
+  path_provider: ^2.1.5
+  firebase_core: ^4.0.0
+  firebase_auth: ^6.0.1
+  flutter_dotenv: ^6.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - .env
+    - .env.production
