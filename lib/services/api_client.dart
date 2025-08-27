@@ -103,7 +103,9 @@ class ApiClient {
 
     final file = File(savePath);
     final sink = file.openWrite();
-    await resp.data.stream.pipe(sink);
+    await for (final chunk in resp.data.stream) {
+      sink.add(chunk);
+    }
     await sink.close();
 
     return file;
