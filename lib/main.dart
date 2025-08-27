@@ -1,6 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:sorteos_app/config/constants/environment.dart';
+import 'package:sorteos_app/pages/admin_page.dart';
+import 'package:sorteos_app/pages/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,8 +32,16 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(body: Center(child: Text('Hello World!'))),
+    return MaterialApp(
+      title: 'Sorteos App - Diocesis de Ciudad Obregon',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF101541)),
+        useMaterial3: true,
+      ),
+      routes: {
+        '/': (_) => const HomePage(),
+        '/admin': (_) => const AdminPage(),
+      },
     );
   }
 }
