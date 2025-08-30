@@ -49,7 +49,9 @@ class _HomePageState extends State<HomePage> {
     setState(() => _loading = true);
 
     try {
-      final sign = await _api.getUploadSignature();
+      final sign = await _api.getUploadSignature(
+        _api.padWallet(_walletCtrl.text.trim()),
+      );
 
       final cloud = await _api.uploadToCloudinary(
         signPayload: sign,
@@ -58,7 +60,7 @@ class _HomePageState extends State<HomePage> {
 
       await _api.createParticipant(
         name: _nameCtrl.text.trim(),
-        walletNumber: _walletCtrl.text.trim(),
+        walletNumber: _api.padWallet(_walletCtrl.text.trim()),
         phone: _phoneCtrl.text.trim(),
         photoPublicId: cloud['public_id'] as String,
         photoVersion: cloud['version'] as String,
@@ -113,9 +115,14 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.all(24),
             child: Card(
               elevation: 3,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 32,
+                  horizontal: 24,
+                ),
                 child: Form(
                   key: _form,
                   child: Column(
@@ -129,61 +136,89 @@ class _HomePageState extends State<HomePage> {
                           width: double.infinity,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300, width: 2),
+                            border: Border.all(
+                              color: Colors.grey.shade300,
+                              width: 2,
+                            ),
                             borderRadius: BorderRadius.circular(16),
                             color: Colors.grey.shade100,
                           ),
-                          child: _photo == null
-                              ? Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.camera_alt, size: 54, color: Colors.grey.shade600),
-                                    const SizedBox(height: 10),
-                                    Text('Tocar para tomar foto de INE', style: TextStyle(color: Colors.grey.shade700)),
-                                  ],
-                                )
-                              : ClipRRect(
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: Image.file(
-                                    _photo!,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: 200,
+                          child:
+                              _photo == null
+                                  ? Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.camera_alt,
+                                        size: 54,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        'Tocar para tomar foto de INE',
+                                        style: TextStyle(
+                                          color: Colors.grey.shade700,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                  : ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Image.file(
+                                      _photo!,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: 200,
+                                    ),
                                   ),
-                                ),
                         ),
                       ),
                       const SizedBox(height: 24),
                       TextFormField(
                         controller: _nameCtrl,
                         decoration: _dec('Nombre completo'),
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                        validator:
+                            (v) =>
+                                (v == null || v.trim().isEmpty)
+                                    ? 'Requerido'
+                                    : null,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _walletCtrl,
                         decoration: _dec('Número de cartera'),
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                        validator:
+                            (v) =>
+                                (v == null || v.trim().isEmpty)
+                                    ? 'Requerido'
+                                    : null,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _phoneCtrl,
                         keyboardType: TextInputType.phone,
                         decoration: _dec('Número de teléfono'),
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                        validator:
+                            (v) =>
+                                (v == null || v.trim().isEmpty)
+                                    ? 'Requerido'
+                                    : null,
                       ),
                       const SizedBox(height: 28),
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
                           onPressed: _loading ? null : _submit,
-                          icon: _loading
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.save),
+                          icon:
+                              _loading
+                                  ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                  : const Icon(Icons.save),
                           label: const Text('Guardar'),
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -194,7 +229,9 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(height: 16),
                       Text(
                         'Aviso: La foto se guarda en almacenamiento privado y el teléfono se protege.',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black54),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: Colors.black54),
                         textAlign: TextAlign.center,
                       ),
                     ],

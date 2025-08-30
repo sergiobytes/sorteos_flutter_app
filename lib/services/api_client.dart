@@ -22,13 +22,45 @@ class Participant {
 }
 
 class ApiClient {
+  Future<Map<String, dynamic>> deleteCloudinaryImage({
+    required Map<String, dynamic> signPayload,
+    required String publicId,
+  }) async {
+    final cloudName = signPayload['cloudName'];
+    final apiKey = signPayload['apiKey'].toString();
+    final timestamp = signPayload['timestamp'].toString();
+    final signature = signPayload['signature'].toString();
+    final url = 'https://api.cloudinary.com/v1_1/$cloudName/image/destroy';
+
+    final formData = FormData.fromMap({
+      'public_id': publicId,
+      'api_key': apiKey,
+      'timestamp': timestamp,
+      'signature': signature,
+    });
+
+    final resp = await _dio.post(url, data: formData);
+    if (resp.statusCode != 200) {
+      throw Exception('Error borrando imagen de Cloudinary');
+    }
+    return resp.data as Map<String, dynamic>;
+  }
+
   static String apiBase = Environment.apiUrl;
   final http.Client _http = http.Client();
   final Dio _dio = Dio();
 
-  Future<Map<String, dynamic>> getUploadSignature() async {
+  Future<Map<String, dynamic>> getUploadSignature(String walletNumber) async {
     final url = Uri.parse('$apiBase/sign-upload');
-    final resp = await _http.post(url);
+    final resp = await _http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'walletNumber': walletNumber}),
+    );
+
+    if (resp.statusCode == 409) {
+      throw Exception('Número de cartera ya registrado');
+    }
 
     if (resp.statusCode != 200) {
       throw Exception('Error firmando upload');
@@ -160,7 +192,7 @@ class ApiClient {
     required String walletNumber,
     required String adminEmail,
   }) async {
-    final normalized = _padWallet(walletNumber);
+    final normalized = padWallet(walletNumber);
 
     if (normalized.isEmpty) throw Exception('Cartera inválida. Usa 001-840');
 
@@ -175,7 +207,7 @@ class ApiClient {
     }
   }
 
-  String _padWallet(String w) {
+  String padWallet(String w) {
     final digits = w.replaceAll(RegExp(r'\D'), '');
     if (digits.isEmpty) return '';
     final n = int.tryParse(digits) ?? 0;
