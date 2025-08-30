@@ -10,6 +10,17 @@ class PurgeResult {
   PurgeResult({required this.deletedParticipants, required this.deletedPhotos});
 }
 
+class Participant {
+  final String name;
+  final String walletNumber;
+  Participant({required this.name, required this.walletNumber});
+
+  factory Participant.fromJson(Map<String, dynamic> j) => Participant(
+    name: j['name'] as String,
+    walletNumber: ['walletNumber'] as String,
+  );
+}
+
 class ApiClient {
   static String apiBase = Environment.apiUrl;
   final http.Client _http = http.Client();
@@ -142,5 +153,51 @@ class ApiClient {
       deletedParticipants: (data['deletedParticipants'] ?? 0) as int,
       deletedPhotos: (data['deletedPhotos'] ?? 0) as int,
     );
+  }
+
+  Future<void> markPaidByWallet({
+    required String idToken,
+    required String walletNumber,
+    required String adminEmail,
+  }) async {
+    final normalized = _padWallet(walletNumber);
+
+    if (normalized.isEmpty) throw Exception('Cartera inválida. Usa 001-840');
+
+    final resp = await _dio.put(
+      '$apiBase/admin/mark-paid',
+      data: {'walletNumber': normalized, 'adminEmail': adminEmail},
+      options: Options(headers: {'Authorization': 'Bearer $idToken'}),
+    );
+
+    if (resp.statusCode != 200) {
+      throw Exception('Error marcando como pagado (${resp.statusCode})');
+    }
+  }
+
+  String _padWallet(String w) {
+    final digits = w.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return '';
+    final n = int.tryParse(digits) ?? 0;
+    if (n < 1 || n > 840) return '';
+    return n.toString().padLeft(3, '0');
+  }
+
+  Future<List<Participant>> fetchUnpaid({
+    required String idToken,
+    String query = "",
+  }) async {
+    final resp = await _dio.get(
+      '$apiBase/admin/unpaid',
+      queryParameters: {'q': query},
+      options: Options(headers: {'Authorization': 'Bearer $idToken'}),
+    );
+    if (resp.statusCode != 200) {
+      throw Exception('Error obteniendo no pagados (${resp.statusCode})');
+    }
+    final data = resp.data as List;
+    return data
+        .map((e) => Participant.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 }

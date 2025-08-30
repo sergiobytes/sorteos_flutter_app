@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:sorteos_app/pages/unpaid_page.dart';
+import 'package:sorteos_app/services/admin_prefs.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 
@@ -23,6 +25,7 @@ class _AdminPageState extends State<AdminPage> {
   bool _loadingLogin = false;
   bool _loadingZip = false;
   bool _loadingPurge = false;
+
   String? _zipPath;
 
   @override
@@ -34,9 +37,15 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _login() async {
     if (!_form.currentState!.validate()) return;
-  setState(() => _loadingLogin = true);
+    setState(() => _loadingLogin = true);
     try {
-      await _auth.signIn(_emailCtrl.text.trim(), _passCtrl.text);
+      final email = _emailCtrl.text.trim();
+
+      await _auth.signIn(email, _passCtrl.text);
+
+
+      await AdminPrefs.saveEmail(email);
+
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -62,7 +71,7 @@ class _AdminPageState extends State<AdminPage> {
       return;
     }
 
-  setState(() => _loadingZip = true);
+    setState(() => _loadingZip = true);
     try {
       final tmpDir = await getTemporaryDirectory();
       final fileName =
@@ -129,8 +138,8 @@ class _AdminPageState extends State<AdminPage> {
     );
     if (ok != true) return;
 
-  if (_loadingZip || _loadingPurge) return;
-  setState(() => _loadingPurge = true);
+    if (_loadingZip || _loadingPurge) return;
+    setState(() => _loadingPurge = true);
 
     try {
       // llama al ApiClient como a downloadZip
@@ -162,6 +171,7 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _logout() async {
     await _auth.signOut();
+    await AdminPrefs.clear();
     if (!mounted) return;
     setState(() => _zipPath = null);
     ScaffoldMessenger.of(
@@ -224,16 +234,20 @@ class _AdminPageState extends State<AdminPage> {
                         SizedBox(
                           width: double.infinity,
                           child: FilledButton(
-                            onPressed: (_loadingLogin || _loadingZip || _loadingPurge) ? null : _login,
-                            child: _loadingLogin
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text('Entrar'),
+                            onPressed:
+                                (_loadingLogin || _loadingZip || _loadingPurge)
+                                    ? null
+                                    : _login,
+                            child:
+                                _loadingLogin
+                                    ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                    : const Text('Entrar'),
                           ),
                         ),
                       ],
@@ -259,16 +273,20 @@ class _AdminPageState extends State<AdminPage> {
                       SizedBox(
                         width: 260,
                         child: FilledButton.icon(
-                          onPressed: (_loadingZip || _loadingPurge) ? null : _downloadZip,
-                          icon: _loadingZip
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.download),
+                          onPressed:
+                              (_loadingZip || _loadingPurge)
+                                  ? null
+                                  : _downloadZip,
+                          icon:
+                              _loadingZip
+                                  ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                  : const Icon(Icons.download),
                           label: const Text('Descargar ZIP'),
                         ),
                       ),
@@ -276,27 +294,48 @@ class _AdminPageState extends State<AdminPage> {
                       SizedBox(
                         width: 260,
                         child: FilledButton.icon(
-                          onPressed: (_loadingZip || _loadingPurge) ? null : _purgeAll,
-                          icon: _loadingPurge
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                          onPressed:
+                              _loadingPurge || _loadingZip
+                                  ? null
+                                  : () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const UnpaidPage(),
+                                    ),
                                   ),
-                                )
-                              : const Icon(Icons.delete),
+                          icon: const Icon(Icons.list_alt),
+                          label: const Text('Carteras sin pagar'),
+                        ),
+                      ),
+
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: 260,
+                        child: FilledButton.icon(
+                          onPressed:
+                              (_loadingZip || _loadingPurge) ? null : _purgeAll,
+                          icon:
+                              _loadingPurge
+                                  ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                  : const Icon(Icons.delete),
                           label: const Text('Borrar base de datos'),
                           style: FilledButton.styleFrom(
                             backgroundColor: Colors.red.shade400,
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 18),
                       SizedBox(
                         width: 260,
                         child: OutlinedButton.icon(
-                          onPressed: (_loadingZip || _loadingPurge) ? null : _logout,
+                          onPressed:
+                              (_loadingZip || _loadingPurge) ? null : _logout,
                           icon: const Icon(Icons.logout),
                           label: const Text('Salir'),
                         ),
