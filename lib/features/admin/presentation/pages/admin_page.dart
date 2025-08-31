@@ -4,8 +4,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sorteos_app/features/participants/presentation/pages/unpaid_page.dart';
 import 'package:sorteos_app/services/admin_prefs.dart';
-import '../shared/data/datasources/api_client.dart';
-import '../../../../../../../services/auth_service.dart';
+import '../../../../shared/data/datasources/api_client.dart';
+import '../../../../services/auth_service.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});

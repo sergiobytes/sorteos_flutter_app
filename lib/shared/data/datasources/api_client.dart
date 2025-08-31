@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
-import 'package:sorteos_app/config/constants/environment.dart';
+import 'package:sorteos_app/core/constants/environment.dart';
 
 class PurgeResult {
   final int deletedParticipants;

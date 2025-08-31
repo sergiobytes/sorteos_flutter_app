@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../shared/data/datasources/api_client.dart';
+import '../../../../shared/data/datasources/api_client.dart';
 import '../../../../services/auth_service.dart';
 import '../../../../services/admin_prefs.dart';
 
