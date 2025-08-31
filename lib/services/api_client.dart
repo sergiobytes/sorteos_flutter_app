@@ -15,10 +15,19 @@ class Participant {
   final String walletNumber;
   Participant({required this.name, required this.walletNumber});
 
-  factory Participant.fromJson(Map<String, dynamic> j) => Participant(
-    name: j['name'] as String,
-    walletNumber: ['walletNumber'] as String,
-  );
+  static String _asString(dynamic v) {
+    if (v == null) return '';
+    if (v is String) return v;
+    if (v is num) return v.toString();
+    if (v is List) return v.join(' ');
+    return v.toString();
+  }
+
+  factory Participant.fromJson(Map<String, dynamic> j) {
+    final name = _asString(j['name']);
+    final wallet = _asString(j['wallet_number']);
+    return Participant(name: name, walletNumber: wallet.padLeft(3, '0'));
+  }
 }
 
 class ApiClient {
@@ -227,9 +236,17 @@ class ApiClient {
     if (resp.statusCode != 200) {
       throw Exception('Error obteniendo no pagados (${resp.statusCode})');
     }
-    final data = resp.data as List;
-    return data
-        .map((e) => Participant.fromJson(e as Map<String, dynamic>))
+
+    final raw = resp.data;
+    final List list =
+        raw is List
+            ? raw
+            : (raw is Map && raw['data'] is List
+                ? raw['data'] as List
+                : const []);
+
+    return list
+        .map((e) => Participant.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 }
