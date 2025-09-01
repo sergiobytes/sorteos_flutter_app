@@ -1,29 +1,11 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class Environment {
-  static initPrdEnvironment() async {
-    await dotenv.load(fileName: '.env.production');
-  }
-
-  static initLocalEnvironment() async {
-    await dotenv.load(fileName: '.env');
-  }
-
-  static String apiUrl =
-      dotenv.env['API_URL'] ?? 'No está configurado el API_URL';
-
-  static String apiKey =
-      dotenv.env['API_KEY'] ?? 'No está configurado el API_KEY';
-
-  static String appId = dotenv.env['APP_ID'] ?? 'No está configurado el APP_ID';
-
-  static String messagingSenderId =
-      dotenv.env['MESSAGING_SENDER_ID'] ??
-      'No está configurado el MESSAGING_SENDER_ID';
-
-  static String projectId =
-      dotenv.env['PROJECT_ID'] ?? 'No está configurado el PROJECT_ID';
-
-  static String storageBucket =
-      dotenv.env['STORAGE_BUCKET'] ?? 'No está configurado el STORAGE_BUCKET';
+  static String get apiUrl => dotenv.env['BASE_URL'] ?? '';
+  static String get apiKey => dotenv.env['API_KEY'] ?? '';
+  static String get appId => dotenv.env['APP_ID'] ?? '';
+  static String get messagingSenderId =>
+      dotenv.env['MESSAGING_SENDER_ID'] ?? '';
+  static String get projectId => dotenv.env['PROJECT_ID'] ?? '';
+  static String get storageBucket => dotenv.env['STORAGE_BUCKET'] ?? '';
 }
