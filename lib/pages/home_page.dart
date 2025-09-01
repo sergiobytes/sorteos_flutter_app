@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:sorteos_app/shared/data/datasources/api_client.dart';
+import 'package:sorteos_app/services/api_client.dart';
 import 'package:sorteos_app/services/upload_service.dart';
 
 class HomePage extends StatefulWidget {

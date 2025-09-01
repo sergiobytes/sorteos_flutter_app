@@ -1,8 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:sorteos_app/core/constants/environment.dart';
-import 'package:sorteos_app/features/admin/presentation/pages/admin_page.dart';
-import 'package:sorteos_app/features/participants/presentation/pages/home_page.dart';
+import 'package:sorteos_app/config/constants/environment.dart';
+import 'package:sorteos_app/pages/admin_page.dart';
+import 'package:sorteos_app/pages/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
